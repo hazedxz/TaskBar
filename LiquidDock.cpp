@@ -7,7 +7,7 @@
 
 #pragma comment(lib, "gdiplus.lib")
 
-// --- Estructuras para el efecto cristal ---
+
 struct ACCENTPOLICY { int nAccentState; int nFlags; int nColor; int nAnimationId; };
 struct WINCOMPATTRDATA { int nAttribute; PVOID pData; ULONG ulDataSize; };
 
@@ -17,7 +17,7 @@ void EnableLiquidGlass(HWND hwnd) {
         typedef BOOL(WINAPI* pSetAttr)(HWND, WINCOMPATTRDATA*);
         pSetAttr SetAttr = (pSetAttr)GetProcAddress(hUser, "SetWindowCompositionAttribute");
         if (SetAttr) {
-            // Tinte oscuro translúcido perfecto para Win11 Dark Mode
+            
             ACCENTPOLICY policy = { 3, 0, 0x50151515, 0 }; 
             WINCOMPATTRDATA data = { 19, &policy, sizeof(ACCENTPOLICY) };
             SetAttr(hwnd, &data);
@@ -25,7 +25,7 @@ void EnableLiquidGlass(HWND hwnd) {
     }
 }
 
-// --- Variables Globales ---
+
 bool isDockActive = false;
 HWND hwndDock = NULL;
 HWND hwndStartMenu = NULL;
@@ -34,7 +34,7 @@ bool isMenuVisible = false;
 std::vector<HWND> openApps;
 ULONG_PTR gdiplusToken;
 
-// --- Escáner de Aplicaciones ---
+
 BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam) {
     if (IsWindowVisible(hwnd) && hwnd != hwndDock && hwnd != hwndStartMenu && hwnd != hwndControlPanel) {
         HWND owner = GetWindow(hwnd, GW_OWNER);
@@ -49,7 +49,7 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam) {
     return TRUE;
 }
 
-// --- Menú de Inicio (Win11 Replica) ---
+
 LRESULT CALLBACK StartMenuProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_PAINT: {
@@ -117,7 +117,7 @@ void ToggleStartMenu() {
     isMenuVisible = !isMenuVisible;
 }
 
-// --- Barra de Tareas (Win11 Replica) ---
+
 LRESULT CALLBACK DockProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_TIMER:
@@ -129,7 +129,7 @@ LRESULT CALLBACK DockProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             PAINTSTRUCT ps; HDC hdc = BeginPaint(hwnd, &ps);
             int sw = GetSystemMetrics(SM_CXSCREEN);
             
-            // Fondo de la barra
+            
             HBRUSH bgBrush = CreateSolidBrush(RGB(24, 24, 28)); 
             RECT fullRect = {0, 0, sw, 48}; 
             FillRect(hdc, &fullRect, bgBrush); DeleteObject(bgBrush);
@@ -139,7 +139,7 @@ LRESULT CALLBACK DockProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             int blockWidth = totalIcons * iconSpacing;
             int startX = (sw - blockWidth) / 2;
 
-            // 1. Logo Win11 Original
+            
             SelectObject(hdc, GetStockObject(NULL_PEN));
             HBRUSH bTopLeft = CreateSolidBrush(RGB(61, 141, 227));
             HBRUSH bTopRight = CreateSolidBrush(RGB(46, 121, 211));
@@ -154,12 +154,12 @@ LRESULT CALLBACK DockProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
             DeleteObject(bTopLeft); DeleteObject(bTopRight); DeleteObject(bBotLeft); DeleteObject(bBotRight);
 
-            // GDI+ Engine para Alta Calidad
+            
             Gdiplus::Graphics graphics(hdc);
             graphics.SetInterpolationMode(Gdiplus::InterpolationModeHighQualityBicubic);
             graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
 
-            // 2. Dibujar Iconos de Apps con Cero Pixelado
+            
             int currentX = startX + iconSpacing;
             HWND activeApp = GetForegroundWindow();
             for (HWND app : openApps) {
@@ -176,7 +176,7 @@ LRESULT CALLBACK DockProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                     }
                 }
                 
-                // Indicador visual
+                
                 if (app == activeApp) {
                     Gdiplus::SolidBrush activeBrush(Gdiplus::Color(255, 0, 120, 215));
                     graphics.FillRectangle(&activeBrush, currentX + 12, 40, 12, 3);
@@ -187,18 +187,18 @@ LRESULT CALLBACK DockProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 currentX += iconSpacing;
             }
 
-            // 3. System Tray (Wi-Fi, Volumen) Dibujados Vectorialmente con GDI+
+            
             Gdiplus::SolidBrush whiteBrush(Gdiplus::Color(255, 255, 255, 255));
             Gdiplus::Pen whitePen(Gdiplus::Color(255, 255, 255, 255), 1.5f);
 
-            // Dibujo de Red/Wi-Fi Infalible
+            
             int wx = sw - 135; int wy = 26; 
-            graphics.FillEllipse(&whiteBrush, wx - 2, wy, 4, 4); // Punto central
+            graphics.FillEllipse(&whiteBrush, wx - 2, wy, 4, 4); 
             graphics.DrawArc(&whitePen, wx - 6, wy - 4, 12, 12, 225, 90);
             graphics.DrawArc(&whitePen, wx - 10, wy - 8, 20, 20, 225, 90);
             graphics.DrawArc(&whitePen, wx - 14, wy - 12, 28, 28, 225, 90);
 
-            // Dibujo de Volumen Infalible
+           
             int vx = sw - 110; int vy = 16;
             graphics.FillRectangle(&whiteBrush, vx, vy + 4, 4, 6);
             Gdiplus::Point pts[3] = { Gdiplus::Point(vx + 4, vy + 4), Gdiplus::Point(vx + 9, vy), Gdiplus::Point(vx + 9, vy + 14) };
@@ -206,7 +206,7 @@ LRESULT CALLBACK DockProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             graphics.DrawArc(&whitePen, vx + 8, vy + 3, 6, 8, -90, 180);
             graphics.DrawArc(&whitePen, vx + 8, vy, 10, 14, -90, 180);
 
-            // Reloj Nítido
+            
             SetBkMode(hdc, TRANSPARENT); 
             SetTextColor(hdc, RGB(255, 255, 255));
             SYSTEMTIME st; GetLocalTime(&st);
@@ -224,9 +224,9 @@ LRESULT CALLBACK DockProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             int totalWidth = (openApps.size() + 1) * 44;
             int startX = (sw - totalWidth) / 2;
 
-            // Hitbox Inicio
+            
             if (x >= startX && x <= startX + 44) ToggleStartMenu(); 
-            // Hitbox Apps
+            
             else if (x > startX + 44 && x < startX + totalWidth) {
                 int idx = (x - (startX + 44)) / 44;
                 if (idx >= 0 && idx < openApps.size()) { 
@@ -234,11 +234,11 @@ LRESULT CALLBACK DockProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                     SetForegroundWindow(openApps[idx]); 
                 }
             }
-            // Hitbox Wi-Fi
+            
             else if (x >= sw - 150 && x <= sw - 125) {
                 ShellExecuteA(NULL, "open", "ms-availablenetworks:", NULL, NULL, SW_SHOWNORMAL);
             }
-            // Hitbox Volumen
+            
             else if (x >= sw - 120 && x <= sw - 95) {
                 ShellExecuteA(NULL, "open", "sndvol.exe", NULL, NULL, SW_SHOWNORMAL);
             }
@@ -248,7 +248,7 @@ LRESULT CALLBACK DockProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     return DefWindowProcA(hwnd, uMsg, wParam, lParam);
 }
 
-// --- Encender / Apagar el Sistema ---
+
 void ToggleSystem(bool turnOn) {
     if (turnOn) {
         ShowWindow(FindWindowA("Shell_TrayWnd", NULL), SW_HIDE);
@@ -269,7 +269,7 @@ void ToggleSystem(bool turnOn) {
     }
 }
 
-// --- Panel de Control ---
+
 LRESULT CALLBACK ControlPanelProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_PAINT: {
@@ -327,7 +327,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR lpCmd, int nShow) {
     
     MSG msg; while (GetMessage(&msg, NULL, 0, 0)) { TranslateMessage(&msg); DispatchMessage(&msg); }
     
-    // Apagar GDI+
+    
     Gdiplus::GdiplusShutdown(gdiplusToken);
     return 0;
 }
