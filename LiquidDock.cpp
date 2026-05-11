@@ -7,7 +7,7 @@
 
 #pragma comment(lib, "gdiplus.lib")
 
-// --- Liquid Glass Structures ---
+
 struct ACCENTPOLICY { int nAccentState; int nFlags; int nColor; int nAnimationId; };
 struct WINCOMPATTRDATA { int nAttribute; PVOID pData; ULONG ulDataSize; };
 
@@ -17,8 +17,7 @@ void EnableLiquidGlass(HWND hwnd) {
         typedef BOOL(WINAPI* pSetAttr)(HWND, WINCOMPATTRDATA*);
         pSetAttr SetAttr = (pSetAttr)GetProcAddress(hUser, "SetWindowCompositionAttribute");
         if (SetAttr) {
-            // State 4 = ACCENT_ENABLE_ACRYLICBLURBEHIND (Modern Win11 Blur)
-            // Color is ABGR format. 0x40000000 = 25% opacity black tint to let blur shine
+            
             ACCENTPOLICY policy = { 4, 2, 0x40000000, 0 }; 
             WINCOMPATTRDATA data = { 19, &policy, sizeof(ACCENTPOLICY) };
             SetAttr(hwnd, &data);
@@ -26,7 +25,7 @@ void EnableLiquidGlass(HWND hwnd) {
     }
 }
 
-// --- Global Variables ---
+
 bool isDockActive = false;
 HWND hwndDock = NULL;
 HWND hwndStartMenu = NULL;
@@ -34,9 +33,9 @@ HWND hwndControlPanel = NULL;
 bool isMenuVisible = false;
 std::vector<HWND> openApps;
 ULONG_PTR gdiplusToken;
-int hoveredIndex = -1; // -1: none, 0: start button, >0: apps
+int hoveredIndex = -1; 
 
-// --- Application Scanner ---
+
 BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam) {
     if (IsWindowVisible(hwnd) && hwnd != hwndDock && hwnd != hwndStartMenu && hwnd != hwndControlPanel) {
         HWND owner = GetWindow(hwnd, GW_OWNER);
@@ -51,7 +50,7 @@ BOOL CALLBACK EnumWindowsProc(HWND hwnd, LPARAM lParam) {
     return TRUE;
 }
 
-// --- Start Menu (Win11 Visual Replica) ---
+
 LRESULT CALLBACK StartMenuProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_PAINT: {
@@ -119,7 +118,7 @@ void ToggleStartMenu() {
     isMenuVisible = !isMenuVisible;
 }
 
-// --- Liquid Taskbar ---
+
 LRESULT CALLBACK DockProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_TIMER:
@@ -128,7 +127,7 @@ LRESULT CALLBACK DockProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             return 0;
 
         case WM_ERASEBKGND:
-            return 1; // Prevent default background clear to eliminate flicker
+            return 1; 
 
         case WM_MOUSEMOVE: {
             int sw = GetSystemMetrics(SM_CXSCREEN);
@@ -144,7 +143,7 @@ LRESULT CALLBACK DockProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
 
             if (newHover != hoveredIndex) {
                 hoveredIndex = newHover;
-                InvalidateRect(hwnd, NULL, FALSE); // Redraw for hover animation
+                InvalidateRect(hwnd, NULL, FALSE); 
             }
 
             TRACKMOUSEEVENT tme = { sizeof(TRACKMOUSEEVENT), TME_LEAVE, hwnd, 0 };
@@ -162,7 +161,7 @@ LRESULT CALLBACK DockProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             PAINTSTRUCT ps; HDC hdc = BeginPaint(hwnd, &ps);
             int sw = GetSystemMetrics(SM_CXSCREEN);
             
-            // Create 32-bit DIB section for perfect alpha preservation
+            
             HDC hdcMem = CreateCompatibleDC(hdc);
             BITMAPINFO bmi = {0};
             bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
@@ -180,7 +179,7 @@ LRESULT CALLBACK DockProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             graphics.SetSmoothingMode(Gdiplus::SmoothingModeAntiAlias);
             graphics.SetTextRenderingHint(Gdiplus::TextRenderingHintAntiAliasGridFit);
 
-            // True Liquid Glass Alpha Clear (100 out of 255 alpha)
+            
             graphics.Clear(Gdiplus::Color(100, 24, 24, 28));
 
             int iconSpacing = 44;
@@ -188,13 +187,13 @@ LRESULT CALLBACK DockProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             int blockWidth = totalIcons * iconSpacing;
             int startX = (sw - blockWidth) / 2;
 
-            // Hover effect for Start Button
+            
             if (hoveredIndex == 0) {
                 Gdiplus::SolidBrush hoverBrush(Gdiplus::Color(40, 255, 255, 255));
                 graphics.FillRectangle(&hoverBrush, startX + 2, 4, 40, 40);
             }
 
-            // 1. Original Win11 Logo
+            
             int sx = startX + 10; int sy = 12; int gap = 1; int sqSize = 10;
             Gdiplus::SolidBrush bTopLeft(Gdiplus::Color(255, 61, 141, 227));
             Gdiplus::SolidBrush bTopRight(Gdiplus::Color(255, 46, 121, 211));
@@ -206,13 +205,13 @@ LRESULT CALLBACK DockProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
             graphics.FillRectangle(&bBotLeft, sx, sy + sqSize + gap, sqSize, sqSize);
             graphics.FillRectangle(&bBotRight, sx + sqSize + gap, sy + sqSize + gap, sqSize, sqSize);
 
-            // 2. Draw App Icons
+            
             int currentX = startX + iconSpacing;
             HWND activeApp = GetForegroundWindow();
             for (int i = 0; i < openApps.size(); i++) {
                 HWND app = openApps[i];
                 
-                // Hover highlight for apps
+                
                 if (hoveredIndex == i + 1) {
                     Gdiplus::SolidBrush hoverBrush(Gdiplus::Color(40, 255, 255, 255));
                     graphics.FillRectangle(&hoverBrush, currentX + 2, 4, 40, 40);
@@ -241,7 +240,7 @@ LRESULT CALLBACK DockProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 currentX += iconSpacing;
             }
 
-            // 3. System Tray (Wi-Fi, Volume, Clock)
+           
             Gdiplus::SolidBrush whiteBrush(Gdiplus::Color(255, 255, 255, 255));
             Gdiplus::Pen whitePen(Gdiplus::Color(255, 255, 255, 255), 1.5f);
 
@@ -302,7 +301,7 @@ LRESULT CALLBACK DockProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     return DefWindowProcA(hwnd, uMsg, wParam, lParam);
 }
 
-// --- System Toggle ---
+
 void ToggleSystem(bool turnOn) {
     if (turnOn) {
         ShowWindow(FindWindowA("Shell_TrayWnd", NULL), SW_HIDE);
@@ -325,7 +324,7 @@ void ToggleSystem(bool turnOn) {
     }
 }
 
-// --- Control Panel ---
+
 LRESULT CALLBACK ControlPanelProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
         case WM_PAINT: {
